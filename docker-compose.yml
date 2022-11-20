@@ -1,0 +1,123 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo
+    container_name: "Mongo Database"
+    ports:
+      - '27017:27017'
+    networks:
+      - local-keycloak
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=rootuser
+      - MONGO_INITDB_ROOT_PASSWORD=rootpass
+
+  mysqldb:
+    image: mysql:8.0
+    container_name: "Mysql Database"
+    ports:
+      - '3306:3306'
+    environment:
+      - MYSQL_DATABASE=BillsDB
+      - MYSQL_ROOT_PASSWORD=rootpass
+    networks:
+      - local-keycloak
+    volumes:
+      - db:/var/lib/mysql
+
+  postgres:
+    image: postgres:latest
+    container_name: "Postgres"
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - '5432:5432'
+    networks:
+      - local-keycloak
+    volumes:
+      - db:/var/lib/postgresql/data
+
+
+
+  keycloak-service:
+    image: quay.io/keycloak/keycloak:18.0.0
+    depends_on:
+      - postgres
+    container_name: "Keycloak Service"
+    ports:
+      - "8082:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_IMPORT: /realm-digital-house.json
+      KC_DB: postgres
+      KC_DB_PASSWORD: 1234
+      KC_DB_USERNAME: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+    command:
+      - start-dev
+
+
+  eureka-service:
+    image: eureka-service
+    depends_on:
+      - keycloak-service
+    container_name: "Eureka Service"
+    ports:
+      - "8761:8761"
+
+
+  gateway-api:
+    image: gateway-api
+    depends_on:
+      - eureka-service
+    container_name: "API Gateway"
+    ports:
+      - "8080:8080"
+    enviroment:
+      EUREKA_URL: http://eureka-service:8761/eureka
+      KEYCLOAK_URL: http://keycloak:8082/
+
+  bills-service:
+    image: ms-bills
+    depends_on:
+      - eureka-servie
+    container_name: "Bills Service"
+    ports:
+      - "8085:8085"
+    enviroment:
+      EUREKA_URL: http://eureka-service:8761/eureka
+      KEYCLOAK_URL: http://keycloak:8082/
+
+  movies-service:
+    image: movies-service
+    depends_on:
+      - eureka-service
+      - mongodb
+    container_name: "Movies Service"
+    ports:
+      - "8086:8086"
+    enviroment:
+      DB_URL: mongodb://mongodb:27017/digitalmoviesdb
+      EUREKA_URL: http://eureka-service:8761/eureka
+      KEYCLOAK_URL: http://keycloak:8082/
+
+  users-service:
+    image: users-service
+    depends_on:
+      - eureka-service
+      - mongodb
+    container_name: "Users Service"
+    ports:
+      - "8087:8087"
+    enviroment:
+      DB_URL: mongodb://mongodb:27017/digitalmoviesdb
+      EUREKA_URL: http://eureka-service:8761/eureka
+      KEYCLOAK_URL: http://keycloak:8082/
+
+
+networks:
+  default:
+    name: local_keycloak_network

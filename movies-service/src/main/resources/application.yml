@@ -1,0 +1,51 @@
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+
+management:
+  endpoints:
+    web:
+      exposure.include: beans, env, health, info, metrics, mappings
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  show-actuator: true
+  swagger-ui:
+    groups-order: DESC
+    disable-swagger-default-url: true
+    
+server:
+  port: 8086
+
+Spring:
+  application:
+    name: movies-service
+  data:
+    mongodb:
+      authentication-database: admin
+      username: rootuser
+      password: rootpass
+      database: moviesdb
+      port: 27017
+      host: ${DB_HOST:localhost}
+  main:
+    allow-circular-references: true
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8082/realms/digitalMedia
+        registration:
+          keycloak:
+            client-id: microservicios
+            client-secret: uPuFoXKhUbpw835EzE0LpxT2O0kcHvZk
+            scope: openid
+            redirected-uri: http://localhost:8082/login/oauth2/code/google
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}

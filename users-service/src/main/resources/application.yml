@@ -1,0 +1,54 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+
+server:
+  port: 8087
+
+Spring:
+  application:
+    name: users-service
+  data:
+    mongodb:
+      authentication-database: admin
+      username: rootuser
+      password: rootpass
+      database: usersdb
+      port: 27017
+      host: ${DB_HOST:localhost}
+  main:
+    allow-circular-references: true
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8082/realms/digitalMedia
+        registration:
+          keycloak:
+            client-id: microservicios
+            client-secret: uPuFoXKhUbpw835EzE0LpxT2O0kcHvZk
+            scope: openid
+            redirected-uri: http://localhost:8082/login/oauth2/code/google
+
+springdoc:
+  show-actuator: true
+  swagger-ui:
+    groups-order: DESC
+    disable-swagger-default-url: true
+management:
+  endpoints:
+    web:
+      exposure.include: beans, env, health, info, metrics, mappings
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+  nimbus:
+    urlDecoder: ${spring.security.oauth2.client.provider.keycloak.issuer-uri}/protocol/openid-connect/certs
+  realm: digitalMedia
+
